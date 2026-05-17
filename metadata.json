@@ -1,6 +1,6 @@
 {
   "name": "PhytoSpectra : Image-Based Plant Recognition Using CNN",
-  "description": "Deep learning powered plant recognition system providing medicinal and toxicological analysis.",
+  "description": "PhytoSpectra is an advanced AI recognition platform. Identify house plants and wild flora with deep learning accuracy, medicinal insights, and safety warnings.",
   "requestFramePermissions": [
     "camera"
   ],

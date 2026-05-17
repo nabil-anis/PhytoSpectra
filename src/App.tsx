@@ -135,42 +135,42 @@ export default function App() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md"
+      className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-4 md:p-6 bg-black/80 backdrop-blur-md"
       onClick={() => setShowBriefing(false)}
     >
       <motion.div 
-        initial={{ scale: 0.9, y: 20 }}
+        initial={{ scale: 0.9, y: 100 }}
         animate={{ scale: 1, y: 0 }}
-        className="bg-white rounded-[40px] p-8 md:p-12 max-w-2xl w-full text-black shadow-2xl relative"
+        className="bg-white rounded-t-[32px] md:rounded-[40px] p-6 md:p-12 max-w-2xl w-full text-black shadow-2xl relative mb-[-1rem] md:mb-0"
         onClick={e => e.stopPropagation()}
       >
         <button 
           onClick={() => setShowBriefing(false)}
-          className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 transition-colors"
+          className="absolute top-4 right-4 md:top-6 md:right-6 p-2 rounded-full hover:bg-gray-100 transition-colors"
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5 md:w-6 md:h-6" />
         </button>
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center text-white">
-            <Leaf className="w-7 h-7" />
+        <div className="flex items-center gap-4 mb-6 md:mb-8">
+          <div className="w-10 h-10 md:w-12 md:h-12 bg-green-500 rounded-xl md:rounded-2xl flex items-center justify-center text-white">
+            <Leaf className="w-6 h-6 md:w-7 md:h-7" />
           </div>
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">The PhytoSpectra Project</h2>
-            <p className="text-green-600 font-bold text-xs uppercase tracking-widest">AI Course Portfolio</p>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Project Briefing</h2>
+            <p className="text-green-600 font-bold text-[9px] md:text-xs uppercase tracking-widest">AI Portfolio Project</p>
           </div>
         </div>
-        <div className="space-y-6 text-gray-600 leading-relaxed">
+        <div className="space-y-6 text-gray-600 leading-relaxed text-sm md:text-base">
           <p>
-            PhytoSpectra is an AI-driven exploration into the intersection of computer vision and botany. Developed as a final course project, it addresses the challenge of precise plant identification using a hybrid approach.
+            PhytoSpectra is an AI-driven exploration into the intersection of computer vision and botany. Developed as a final project, it addresses the challenge of precise plant identification using a hybrid approach.
           </p>
-          <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100 italic font-medium">
-            "We wanted to build something that doesn't just name a plant, but tells its story—medicinal secrets, safety warnings, and care wisdom."
+          <div className="bg-gray-50 rounded-2xl md:rounded-3xl p-4 md:p-6 border border-gray-100 italic font-medium text-gray-900">
+            "We wanted to build something that doesn't just name a plant, but tells its story including medicinal secrets, safety warnings, and care wisdom."
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 pt-2">
             <div>
-              <h4 className="text-black font-bold uppercase text-[10px] tracking-widest mb-4">Lead Developer</h4>
-              <a href="https://www.linkedin.com/in/nabil-anis/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 group">
-                <div className="w-10 h-10 rounded-full bg-apple-gray-100 flex items-center justify-center group-hover:bg-green-100 transition-colors">
+              <h4 className="text-black font-black uppercase text-[9px] tracking-widest mb-3">Lead Developer</h4>
+              <a href="https://www.linkedin.com/in/nabil-anis/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 group p-2 rounded-2xl hover:bg-green-50 transition-colors -ml-2">
+                <div className="w-10 h-10 rounded-full bg-apple-gray-100 flex items-center justify-center group-hover:bg-white transition-colors">
                   <Activity className="w-5 h-5 text-gray-500 group-hover:text-green-600" />
                 </div>
                 <div>
@@ -180,9 +180,9 @@ export default function App() {
               </a>
             </div>
             <div>
-              <h4 className="text-black font-bold uppercase text-[10px] tracking-widest mb-4">AI Researcher</h4>
-              <a href="https://www.linkedin.com/in/rameez-hasan-61862a331/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 group">
-                <div className="w-10 h-10 rounded-full bg-apple-gray-100 flex items-center justify-center group-hover:bg-green-100 transition-colors">
+              <h4 className="text-black font-black uppercase text-[9px] tracking-widest mb-3">AI Researcher</h4>
+              <a href="https://www.linkedin.com/in/rameez-hasan-61862a331/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 group p-2 rounded-2xl hover:bg-green-50 transition-colors -ml-2">
+                <div className="w-10 h-10 rounded-full bg-apple-gray-100 flex items-center justify-center group-hover:bg-white transition-colors">
                   <Zap className="w-5 h-5 text-gray-500 group-hover:text-green-600" />
                 </div>
                 <div>
@@ -192,6 +192,9 @@ export default function App() {
               </a>
             </div>
           </div>
+        </div>
+        <div className="mt-8 pt-6 border-t border-gray-100 text-[10px] text-center text-gray-400 uppercase tracking-widest font-bold">
+          May 2026 • AI Course Project
         </div>
       </motion.div>
     </motion.div>
