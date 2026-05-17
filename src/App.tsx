@@ -306,8 +306,10 @@ export default function App() {
         body: JSON.stringify({ image: base64 }),
       });
 
-      if (!response.ok) throw new Error('Could not identify plant');
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.details || data.error || 'Could not identify plant');
+      }
       setResult(data);
     } catch (err: any) {
       setError(err.message);
@@ -424,6 +426,29 @@ export default function App() {
             <Loader2 className="w-10 h-10 text-green-500 animate-spin" />
             <p className="text-gray-500 font-medium animate-pulse">Analyzing botanical features...</p>
           </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-6 bg-red-50 border border-red-100 rounded-3xl text-center"
+          >
+            <ShieldAlert className="w-8 h-8 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-red-900 mb-2">Identification Failed</h3>
+            <p className="text-red-600 mb-6 max-w-md mx-auto">{error}</p>
+            <button 
+              onClick={() => {
+                setError(null);
+                setImage(null);
+                setResult(null);
+              }}
+              className="px-6 py-2 bg-red-600 text-white rounded-full font-bold hover:bg-red-700 transition-all text-sm"
+            >
+              Try Another Image
+            </button>
+          </motion.div>
         )}
 
         {/* Results State */}

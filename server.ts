@@ -133,35 +133,67 @@ app.post("/api/identify", async (req, res) => {
     // LAYER 3 & ENRICHMENT: Gemini
     console.log(`Layer 3: Enriching ${detectedName || "visual data"} with Gemini Knowledge...`);
     
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not configured in the environment.");
+    }
+
     const prompt = detectedName 
       ? `${PLANT_ID_PROMPT}\n\nThe plant has been identified as '${detectedName}'. Provide the full structured data for this species.`
       : PLANT_ID_PROMPT;
 
     const base64Data = image.split(",")[1] || image;
-    const mimeType = image.split(";")[0].split(":")[1] || "image/jpeg";
+    const mimeType = image.split(";")[0]?.split(":")[1] || "image/jpeg";
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: {
-        parts: [
-          { inlineData: { data: base64Data, mimeType } },
-          { text: prompt }
-        ]
-      },
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: plantSchema,
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-1.5-flash", // Using 1.5-flash as it often has higher free tier quotas
+        contents: {
+          parts: [
+            { inlineData: { data: base64Data, mimeType } },
+            { text: prompt }
+          ]
+        },
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: plantSchema,
+        }
+      });
+
+      const result = JSON.parse(response.text || "{}");
+      // Assign source based on where the identification originated
+      result.source = detectedName ? layerSource : "Gemini Vision Intelligence (Direct)";
+      
+      console.log("Identification successful:", result.commonName);
+      res.json(result);
+    } catch (apiError: any) {
+      // Handle Quota/Rate Limit specifically
+      if (apiError.message?.includes("429") || apiError.message?.includes("RESOURCE_EXHAUSTED")) {
+        throw new Error("PhytoSpectra is currently processing a high volume of requests. Please wait a few moments and try your scan again.");
       }
-    });
+      
+      // Clean up JSON error strings if they exist
+      let cleanMessage = apiError.message;
+      try {
+        const parsedError = JSON.parse(apiError.message);
+        if (parsedError.error?.message) {
+          cleanMessage = parsedError.error.message;
+          if (cleanMessage.includes("quota")) {
+            cleanMessage = "Daily identification limit reached for the free tier. Please try again later.";
+          }
+        }
+      } catch (e) {
+        // Not a JSON string, keep original message
+      }
 
-    const result = JSON.parse(response.text || "{}");
-    // Assign source based on where the identification originated
-    result.source = detectedName ? layerSource : "Gemini Vision Intelligence (Direct)";
-    
-    res.json(result);
+      console.error("Gemini API Error Detail:", cleanMessage);
+      throw new Error(cleanMessage);
+    }
   } catch (error: any) {
-    console.error("System Error:", error);
-    res.status(500).json({ error: "Failed to process image through 3-layered system." });
+    console.error("System Error level identify:", error.message);
+    res.status(500).json({ 
+      error: "Identification Engine Alert",
+      details: error.message 
+    });
   }
 });
 

@@ -1,6 +1,6 @@
 {
-  "name": "PhytoSpectra AI | Advanced Botanical Intelligence",
-  "description": "Identify plants instantly with expert precision. PhytoSpectra uses advanced computer vision to unlock species data, medicinal secrets, and safety warnings.",
+  "name": "PhytoSpectra AI | Instant Plant Identification",
+  "description": "Unlock nature's secrets. Identify house plants and wild flora with 98% deep learning accuracy, medicinal insights, and safety warnings instantly.",
   "requestFramePermissions": [
     "camera"
   ],
