@@ -538,15 +538,29 @@ export default function App() {
                   </div>
                 </section>
 
-                <button 
-                  onClick={() => {
-                    setResult(null);
-                    setImage(null);
-                  }}
-                  className="w-full py-4 bg-apple-gray-200 text-gray-800 rounded-full font-bold hover:bg-apple-gray-300 transition-all flex items-center justify-center gap-2"
-                >
-                  Start New Analysis
-                </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button 
+                    onClick={() => {
+                      setResult(null);
+                      setImage(null);
+                    }}
+                    className="w-full py-4 bg-apple-gray-100 text-gray-800 rounded-full font-bold hover:bg-apple-gray-200 transition-all flex items-center justify-center gap-2"
+                  >
+                    Start New Scan
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.download = `phytospectra-${result.commonName.toLowerCase().replace(/\s+/g, '-')}.jpg`;
+                      link.href = image || '';
+                      link.click();
+                    }}
+                    className="w-full py-4 bg-green-600 text-white rounded-full font-bold hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-600/20"
+                  >
+                    <Upload className="w-4 h-4 rotate-180" />
+                    Save Result
+                  </button>
+                </div>
                 <div className="flex items-center justify-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest pt-4">
                   <Info className="w-3 h-3" />
                   Data powered by {result.source}
@@ -587,7 +601,18 @@ export default function App() {
         <nav className={`h-14 flex items-center px-3 md:px-6 gap-3 md:gap-8 rounded-full border shadow-2xl transition-all duration-500 w-full max-w-fit ${activeView === 'vision' ? 'bg-black/60 backdrop-blur-xl border-white/10' : 'bg-white/80 backdrop-blur-xl border-gray-200'}`}>
           <div 
             onClick={() => setShowBriefing(true)}
-            className="flex items-center gap-2 pr-3 md:pr-6 border-r border-gray-200/50 shrink-0 cursor-pointer group"
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              const svgData = `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='#22c55e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z'></path><path d='M2 21c0-3 1.85-5.36 5.08-6C10.9 14.33 12 14 15 13'></path></svg>`;
+              const blob = new Blob([svgData], { type: 'image/svg+xml' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = 'phytospectra-logo.svg';
+              link.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="flex items-center gap-2 pr-3 md:pr-6 border-r border-gray-200/50 shrink-0 cursor-pointer group select-none"
           >
             <div className="w-7 h-7 bg-green-500 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 group-active:scale-95 transition-all shadow-lg shadow-green-500/20">
               <Leaf className="text-white w-4 h-4" />
