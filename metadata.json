@@ -1,0 +1,10 @@
+{
+  "name": "PhytoSpectra : Image-Based Plant Recognition Using CNN",
+  "description": "Deep learning powered plant recognition system providing medicinal and toxicological analysis.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
