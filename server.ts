@@ -85,13 +85,15 @@ async function identifyWithPlantNet(base64Image: string): Promise<string | null>
     return null;
   }
 
-  console.log("Layer 2: Checking PlantNet botanical database...");
+  console.log("Layer 2: Querying PlantNet botanical database...");
   try {
     const base64Data = base64Image.split(",")[1] || base64Image;
     const buffer = Buffer.from(base64Data, 'base64');
-    const blob = new Blob([buffer]);
     
+    // PlantNet expects a multipart/form-data request
+    // We use the global FormData and Blob available in Node 18+
     const formData = new FormData();
+    const blob = new Blob([buffer], { type: 'image/jpeg' });
     formData.append('images', blob, 'image.jpg');
     formData.append('organs', 'leaf');
 
@@ -100,11 +102,18 @@ async function identifyWithPlantNet(base64Image: string): Promise<string | null>
       body: formData
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn("PlantNet API call failed:", response.status, errorText);
+      return null;
+    }
+
     const data = await response.json();
-    
     if (data.results && data.results.length > 0) {
-      return data.results[0].species.scientificNameWithoutAuthor;
+      // Pick the top result with highest score if available
+      const bestMatch = data.results[0];
+      console.log(`PlantNet match found: ${bestMatch.species.scientificNameWithoutAuthor} (Score: ${bestMatch.score})`);
+      return bestMatch.species.scientificNameWithoutAuthor;
     }
     return null;
   } catch (error) {
@@ -120,33 +129,30 @@ app.post("/api/identify", async (req, res) => {
       return res.status(400).json({ error: "Image is required" });
     }
 
-    // LAYER 1: Custom CNN
-    let detectedName = await identifyWithCustomCNN(image);
-    let layerSource = "Custom CNN Architecture";
+    // Step 1: Attempt Identification via PlantNet (Botanical Authority)
+    let detectedName = await identifyWithPlantNet(image);
+    let layerSource = "PlantNet Botanical V2 Database";
 
-    // LAYER 2: PlantNet Fallback
-    if (!detectedName) {
-      detectedName = await identifyWithPlantNet(image);
-      layerSource = "PlantNet Botanical V2";
-    }
-
-    // LAYER 3 & ENRICHMENT: Gemini
-    console.log(`Layer 3: Enriching ${detectedName || "visual data"} with Gemini Knowledge...`);
+    // Step 2: Use Gemini for Enrichment or Direct Vision Identification
+    console.log(`Layer 3: Processing with Gemini Vision...`);
     
     if (!process.env.GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY is not configured in the environment.");
+      throw new Error("GEMINI_API_KEY is not configured.");
     }
 
     const prompt = detectedName 
-      ? `${PLANT_ID_PROMPT}\n\nThe plant has been identified as '${detectedName}'. Provide the full structured data for this species.`
-      : PLANT_ID_PROMPT;
+      ? `The botanical database has identified this plant as '${detectedName}'. 
+         ${PLANT_ID_PROMPT} 
+         Please provide the full details and Iroh Wisdom for this specific species.`
+      : `${PLANT_ID_PROMPT} 
+         Identify the plant in the image directly and provide the full details and Iroh Wisdom.`;
 
     const base64Data = image.split(",")[1] || image;
     const mimeType = image.split(";")[0]?.split(":")[1] || "image/jpeg";
 
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash", // Using 1.5-flash as it often has higher free tier quotas
+        model: "gemini-1.5-flash", 
         contents: {
           parts: [
             { inlineData: { data: base64Data, mimeType } },
@@ -159,39 +165,25 @@ app.post("/api/identify", async (req, res) => {
         }
       });
 
-      const result = JSON.parse(response.text || "{}");
-      // Assign source based on where the identification originated
+      const text = response.text || "{}";
+      const result = JSON.parse(text);
+      
+      // Finalize source tagging
       result.source = detectedName ? layerSource : "Gemini Vision Intelligence (Direct)";
       
-      console.log("Identification successful:", result.commonName);
+      console.log(`Identification Result: ${result.commonName} (${result.scientificName}) via ${result.source}`);
       res.json(result);
     } catch (apiError: any) {
-      // Handle Quota/Rate Limit specifically
-      if (apiError.message?.includes("429") || apiError.message?.includes("RESOURCE_EXHAUSTED")) {
-        throw new Error("PhytoSpectra is currently processing a high volume of requests. Please wait a few moments and try your scan again.");
+      const errorMessage = apiError.message || "";
+      if (errorMessage.includes("429") || errorMessage.includes("RESOURCE_EXHAUSTED")) {
+        throw new Error("PhytoSpectra is experiencing heavy traffic. Please wait 60 seconds and try your scan again.");
       }
-      
-      // Clean up JSON error strings if they exist
-      let cleanMessage = apiError.message;
-      try {
-        const parsedError = JSON.parse(apiError.message);
-        if (parsedError.error?.message) {
-          cleanMessage = parsedError.error.message;
-          if (cleanMessage.includes("quota")) {
-            cleanMessage = "Daily identification limit reached for the free tier. Please try again later.";
-          }
-        }
-      } catch (e) {
-        // Not a JSON string, keep original message
-      }
-
-      console.error("Gemini API Error Detail:", cleanMessage);
-      throw new Error(cleanMessage);
+      throw apiError;
     }
   } catch (error: any) {
-    console.error("System Error level identify:", error.message);
+    console.error("Critical System Failure:", error.message);
     res.status(500).json({ 
-      error: "Identification Engine Alert",
+      error: "Identification Engine Unavailable",
       details: error.message 
     });
   }
