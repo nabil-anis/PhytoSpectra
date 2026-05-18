@@ -129,54 +129,76 @@ app.post("/api/identify", async (req, res) => {
       return res.status(400).json({ error: "Image is required" });
     }
 
-    // Step 1: Attempt Identification via PlantNet (Botanical Authority)
-    let detectedName = await identifyWithPlantNet(image);
-    let layerSource = "PlantNet Botanical V2 Database";
+    // LAYER 1: Custom CNN Architecture (Placeholder for local model)
+    let detectedName = await identifyWithCustomCNN(image);
+    let layerSource = "Custom CNN Intelligence";
 
-    // Step 2: Use Gemini for Enrichment or Direct Vision Identification
-    console.log(`Layer 3: Processing with Gemini Vision...`);
+    // LAYER 2: PlantNet Botanical Database (Fallback for precise scientific naming)
+    if (!detectedName) {
+      detectedName = await identifyWithPlantNet(image);
+      layerSource = "PlantNet Botanical V2 Database";
+    }
+
+    // LAYER 3 & ENRICHMENT: Gemini Vision or Knowledge Engine
+    console.log(`Layer 3: Processing with Gemini (${detectedName ? "Text Intelligence" : "Vision Intelligence"})...`);
     
     if (!process.env.GEMINI_API_KEY) {
       throw new Error("GEMINI_API_KEY is not configured.");
     }
 
-    const prompt = detectedName 
-      ? `The botanical database has identified this plant as '${detectedName}'. 
-         ${PLANT_ID_PROMPT} 
-         Please provide the full details and Iroh Wisdom for this specific species.`
-      : `${PLANT_ID_PROMPT} 
-         Identify the plant in the image directly and provide the full details and Iroh Wisdom.`;
-
     const base64Data = image.split(",")[1] || image;
     const mimeType = image.split(";")[0]?.split(":")[1] || "image/jpeg";
 
     try {
-      const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash", 
-        contents: {
-          parts: [
-            { inlineData: { data: base64Data, mimeType } },
-            { text: prompt }
-          ]
-        },
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: plantSchema,
-        }
-      });
+      let response;
+      
+      if (detectedName) {
+        // OPTIMIZATION: If we already have a name, use text-only prompt to save Vision quota/tokens
+        console.log(`Using text-only enrichment for: ${detectedName}`);
+        response = await ai.models.generateContent({
+          model: "gemini-2.0-flash", 
+          contents: {
+            parts: [
+              { text: `The botanical name for this plant is confirmed as '${detectedName}'. 
+                        ${PLANT_ID_PROMPT} 
+                        Generate the detailed report for this species.` }
+            ]
+          },
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: plantSchema,
+          }
+        });
+      } else {
+        // FALLBACK: Use full Vision capabilities if other layers failed
+        console.log("Using full Vision Identification...");
+        response = await ai.models.generateContent({
+          model: "gemini-2.0-flash", 
+          contents: {
+            parts: [
+              { inlineData: { data: base64Data, mimeType } },
+              { text: PLANT_ID_PROMPT }
+            ]
+          },
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: plantSchema,
+          }
+        });
+      }
 
       const text = response.text || "{}";
       const result = JSON.parse(text);
       
-      // Finalize source tagging
-      result.source = detectedName ? layerSource : "Gemini Vision Intelligence (Direct)";
+      // Finalize source tagging based on which layer provided the primary identification
+      result.source = detectedName ? layerSource : "Gemini Vision Identification (Global)";
       
-      console.log(`Identification Result: ${result.commonName} (${result.scientificName}) via ${result.source}`);
+      console.log(`Success: Identified as ${result.commonName} (${result.scientificName})`);
       res.json(result);
     } catch (apiError: any) {
       const errorMessage = apiError.message || "";
       if (errorMessage.includes("429") || errorMessage.includes("RESOURCE_EXHAUSTED")) {
-        throw new Error("PhytoSpectra is experiencing heavy traffic. Please wait 60 seconds and try your scan again.");
+        throw new Error("PhytoSpectra is experiencing heavy traffic on the free tier. Please wait 60 seconds and try your scan again.");
       }
       throw apiError;
     }
